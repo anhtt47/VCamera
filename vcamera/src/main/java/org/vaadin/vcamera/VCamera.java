@@ -1,10 +1,15 @@
 package org.vaadin.vcamera;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Tag;
+import com.vaadin.flow.component.page.PendingJavaScriptResult;
 import com.vaadin.flow.server.StreamReceiver;
 import com.vaadin.flow.server.StreamVariable;
 import com.vaadin.flow.shared.Registration;
@@ -21,6 +26,11 @@ public class VCamera extends Component {
 
     public VCamera() {
         getElement().setProperty("volume", 0);
+        getElement().addEventListener("picture-taken", e -> {
+            /*System.out.println("Event 'picture-taken' triggered");*/
+            String imageUrl = e.getEventData().getString("event.detail");
+            fireEvent(new PictureTakenEvent(this, true, imageUrl));
+        }).addEventData("event.detail");
     }
 
     public void setReceiver(DataReceiver receiver) {
@@ -34,7 +44,7 @@ public class VCamera extends Component {
 
     public void startRecording() {
         if(!cameraOn) {
-            throw new IllegalStateException("Camera is not on");
+            throw new IllegalStateException(ErrorDescription.ERR_CAMERA_OFF);
         }
         recording = true;
         getElement().executeJs("""
@@ -74,7 +84,7 @@ public class VCamera extends Component {
 
     public void takePicture() {
         if(!cameraOn) {
-            throw new IllegalStateException("Camera is not on");
+            throw new IllegalStateException(ErrorDescription.ERR_CAMERA_OFF);
         }
         getElement().executeJs("""
                 let canvas = document.createElement("canvas");
@@ -93,6 +103,27 @@ public class VCamera extends Component {
                 },'image/jpeg',0.95);
                 """);
     }
+    /** @author: AnhTT47
+     *  @purpose: Capture image and return url on local to show
+    * */
+    public void takePictureLocal() {
+        if (!cameraOn) {
+            throw new IllegalStateException(ErrorDescription.ERR_CAMERA_OFF);
+        }
+        getElement().executeJs("""
+            let canvas = document.createElement("canvas");
+            let context = canvas.getContext('2d');
+            canvas.height = this.videoHeight;
+            canvas.width = this.videoWidth;
+            context.drawImage(this, 0, 0, this.videoWidth, this.videoHeight);
+            canvas.toBlob(b => {
+                let url = URL.createObjectURL(b);
+                this.dispatchEvent(new CustomEvent('picture-taken', { detail: url }));
+                console.log("Image: "+ url)
+            }, 'image/jpeg', 1.0);
+            """);
+    }
+
 
     public void openCamera() {
         openCamera("{audio:true,video:true}");
@@ -119,6 +150,10 @@ public class VCamera extends Component {
 
     public Registration addFinishedListener(ComponentEventListener<FinishedEvent> listener) {
         return addListener(FinishedEvent.class, listener);
+    }
+
+    public Registration addPictureTakenListener(ComponentEventListener<PictureTakenEvent> listener) {
+        return addListener(PictureTakenEvent.class, listener);
     }
 
 
