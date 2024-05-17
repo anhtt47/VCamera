@@ -13,6 +13,7 @@ import com.vaadin.flow.component.page.PendingJavaScriptResult;
 import com.vaadin.flow.server.StreamReceiver;
 import com.vaadin.flow.server.StreamVariable;
 import com.vaadin.flow.shared.Registration;
+import elemental.json.JsonObject;
 
 /**
  * A special video element that streams content from browser camera.
@@ -28,8 +29,10 @@ public class VCamera extends Component {
         getElement().setProperty("volume", 0);
         getElement().addEventListener("picture-taken", e -> {
             /*System.out.println("Event 'picture-taken' triggered");*/
-            String imageUrl = e.getEventData().getString("event.detail");
-            fireEvent(new PictureTakenEvent(this, true, imageUrl));
+            JsonObject eventData = e.getEventData().getObject("event.detail");
+            String imageUrl = eventData.getString("url");
+            String base64 = eventData.getString("base64");
+            fireEvent(new PictureTakenEvent(this, true, imageUrl, base64));
         }).addEventData("event.detail");
     }
 
@@ -83,18 +86,6 @@ public class VCamera extends Component {
                 """);
     }
 
-    public void forceCloseCamera(){
-        cameraOn = false;
-        getElement().executeJs("""
-                    console.log("Begin force close");
-                    this.stream.getTracks().forEach( t=> {
-                        t.stop();
-                    });
-                    this.stream = null;
-                    console.log("Camera force closed");
-                """);
-    }
-
     public void takePicture() {
         if(!cameraOn) {
             throw new IllegalStateException(ErrorDescription.ERR_CAMERA_OFF);
@@ -135,6 +126,30 @@ public class VCamera extends Component {
                 console.log("Image: "+ url)
             }, 'image/jpeg', 1.0);
             """);
+    }
+
+    public void takePictureLocalWithBase64Result() {
+        if (!cameraOn) {
+            throw new IllegalStateException(ErrorDescription.ERR_CAMERA_OFF);
+        }
+        getElement().executeJs("""
+        let canvas = document.createElement("canvas");
+        let context = canvas.getContext('2d');
+        canvas.height = this.videoHeight;
+        canvas.width = this.videoWidth;
+        context.drawImage(this, 0, 0, this.videoWidth, this.videoHeight);
+        canvas.toBlob(blob => {
+            let url = URL.createObjectURL(blob);
+            let reader = new FileReader();
+            reader.readAsDataURL(blob);
+            reader.onloadend = () => {
+                let base64 = reader.result;
+                this.dispatchEvent(new CustomEvent('picture-taken', { detail: { url: url, base64: base64 } }));
+                console.log("Image URL: " + url);
+                console.log("Image Base64: " + base64);
+            };
+        }, 'image/jpeg', 1.0);
+        """);
     }
 
 
