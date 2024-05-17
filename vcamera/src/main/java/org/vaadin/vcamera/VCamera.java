@@ -78,7 +78,20 @@ public class VCamera extends Component {
                         t.stop();
                     });
                     this.stream = null;
+                    console.log("Camera stream closed");
                 }
+                """);
+    }
+
+    public void forceCloseCamera(){
+        cameraOn = false;
+        getElement().executeJs("""
+                    console.log("Begin force close");
+                    this.stream.getTracks().forEach( t=> {
+                        t.stop();
+                    });
+                    this.stream = null;
+                    console.log("Camera force closed");
                 """);
     }
 

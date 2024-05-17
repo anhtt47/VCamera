@@ -1,9 +1,0 @@
-
-|
-java:S1104"ZMake ERR_CAMERA_OFF a static final constant or non-public and provide accessors if needed.(Âñ½Çûÿÿÿÿ8º”ïÿ÷1
-V
-java:S1444"4Make this "public static ERR_CAMERA_OFF" field final(Âñ½Çûÿÿÿÿ8»”ïÿ÷1
-{
-java:S3008"YRename this field "ERR_CAMERA_OFF" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Âñ½Çûÿÿÿÿ8¾”ïÿ÷1
-\
-java:S1118":Add a private constructor to hide the implicit public one.(ç—Ý¥üÿÿÿÿ8Ã”ïÿ÷1
