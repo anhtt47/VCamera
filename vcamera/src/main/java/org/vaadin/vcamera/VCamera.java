@@ -154,7 +154,7 @@ public class VCamera extends Component {
 
 
     public void openCamera() {
-        openCamera("{audio:true,video:true}");
+        openCamera("{audio:false,video:true}");
     }
 
     public void openCamera(String optionsJson) {
@@ -165,6 +165,7 @@ public class VCamera extends Component {
                         navigator.mediaDevices.getUserMedia(%s).then(stream => {
                             this.stream = stream;
                             this.srcObject = this.stream;
+                            localStream = this.stream;
                             this.play();
                         });
                     }
